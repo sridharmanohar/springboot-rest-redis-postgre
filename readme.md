@@ -362,24 +362,365 @@ f. Check out the keys being used
 ~ Auth. Code:  
   ~ Here the auth. code is obtained by using an auth. server as an intermediary b/w the client and the resource owner.  
   ~ Instead of requesting auth. directly from the resource owner, the client directs the resource owner to an auth. server which in turn directs the resource owner back to the client w/ the auth. code but before directing the resource owner back to the client with auth. code, the auth. server authenticates the resource owner and obatns auth.  
+ ~ this is generally used with server-side applications.   
 ~ Implicit: 
   ~ this is a simplified auth. code flow optimized for clients implemented in a browser using a scripting language like javascript.  
   ~ here instead of issuing the auth. code, the client is issued an access token directly.  
+  ~ this is generally used with mobile apps or web apps - apps that run on the user's device.  
 ~ Resource Owner password Creds:
   ~ the resource owner pwd creds (i.e. username and pwd) can be used directly as an auth. grant to obtain an access token.  
   ~ this should only be used when there is a high degree of trust b/w the resource owner and tthe client.  
   ~ but even though the resource owner creds are with client, they are with teh client for a single reqest and are then exchanged for an access token.  
   ~ this grant eliminates the need for the client to store the creds for future use, by exchanging creds with a long-lived access token. 
+  ~ this is used with trusted applications, such as those owned by the service itself.  
 ~ Client creds:
   ~ here the client creds are used as auth. grant typically when the client is acting on its own behalf i.e. the client is also the resource owner.  
   ~ used for machine-to-machine interaction.  
-
+  ~ used with Applications API access.  
 
 ## OAuth2 Access Token
-~ 
+~ Access tokens are strings representing an auth. issued by the auth. server in exchange of the auth. grant to the client to enable the client to access protected resources.  
+~ These tokens repesent specific scopes and duration of access.  
+~ Access tokens can have different formats, strucrures and cryptographic properties depending upon the resource server security requirements.  
+  
+## OAuth2 Refresh Token
+~ Refresh tokens are creds issued to the clients by the auth. server which are used to obtain fresh/new access tokens when the existing ones become invalid/expire.  
+~ These tokens are optional and it depends upon the auth. server whether to issue to refresh tokens or not. But if they are issued, they are issued along with the access tokens itself by the auth. server.  
+~ But, unlike access tokens, refresh tokens are intended for use only with the auth. server and are never sent to the resource server.  
+~ The flow for getting an refresh token and it's use is as follows:
+~ the client requests an access token by authenticating with the auth. server and presenting an auth. grant.  
+~ the auth. server authenticates the client and validates the auth. grant, and if valid, issues an access token and a refresh token.  
+~ the client makes a protected resource request to the resource server by presenting an access token.  
+~ the resource server validates the access token, and if valid, serves the request.  
+~ If the access token is invalid or expired, the resource server returns an invalid token error.  
+~ the client requests a new access token by authenticating with the auth. server and presenting the refresh token.  
+~ the auth. server authenticates the client and validates the refresh token, and if valid, issues a new access token (and, optionally, a new refresh token).  
+
+## OAuth2 Client registration
+~ Before the client initiates the protocol, it has to register with the auth. server.  
+~ This reg. can happen in many ways but typically involves an end-user interaction with an html form and filling out a few details.  
+
+## OAuth2 Client Types
+~ 2 client types based on their ability to maintain confidentiality of their client creds:  
+~ confidential: clients capable of maintaining the confidentiality of their creds i.e. client implemented on a secure server.  
+~ public: web-browser based applications etc.  
+
+## Oauth2 Client Identifier
+~ The authorization server issues the registered client a client identifier -- a unique string representing the registration information provided by the client.  
+
+## OAuth2 Client Authentication
+~ Confidential clients are typically issued (or establish) a set of client credentials used for authenticating with the authorization server (e.g., password, public/private key pair).  
+
+## OAuth2 Client Password
+~ Clients in possession of a client password MAY use the HTTP Basic authentication scheme to authenticate with tthe auth. server.  
+~ The client identifier is encoded using the "application/x-www-form-urlencoded" encoding algorithm and this encoded value is used as the username.  
+~ the client pwd is encoded using the same algo and used as the pwd.  
+~ The authorization server MUST support the HTTP Basic authentication scheme for authenticating clients that were issued a client password.
+
+## OAuth2 Protocol Endpoints
+~ There are 2 protocol endpoints:
+~ Auth. endpoint:  
+  ~ used by the client to obtain authorization from the resource owner.  
+  ~ Before this, The authorization server  MUST first verify the identity of the resource owner.  The way in which the authorization server authenticates the resource owner (e.g., username and password login, session cookies) is beyond the scope of this specification.  
+  ~ The authorization server MUST support the use of the HTTP "GET" method for the authorization endpoint and MAY support the use of the "POST" method as well.  
+~ Token endpoint:
+  ~ this is used by the client for obtaining an access token by presenting its auth. grant or refresh token.  
+  ~ The token endpoint is used with every authorization grant except for the implicit grant type (since an access token is issued directly).   
+  ~ The client MUST use the HTTP "POST" method when making access token requests.  
+
+## OAuth2 Access Token Scope
+~ The authorization and token endpoints allow the client to specify the scope of the access request using the "scope" request parameter.  
+~ In turn, the authorization server uses the "scope" response parameter to inform the client of the scope of the access token issued.  
+~ The value of the scope parameter is expressed as a list of space-delimited, case-sensitive strings.  
+~ The strings are defined by the authorization server.  If the value contains multiple space-delimited strings, their order does not matter.  
+~ The authorization server MAY fully or partially ignore the scope requested by the client.  
+
+## OAuth2 Issuing an Access Token
+~ If the access token request is valid and authorized, the authorization server issues an access token and optional refresh token.  
+~ If the request failed client authentication or is invalid, the authorization server returns an error response.  
+~ Successful Response:
+  ~ access_token: REQUIRED: The access token issued by the authorization server.  
+  ~ token_type: REQUIRED: the type of the token issued. value is case insensitive.  
+  ~ expires_in: RECOMMENDED: The lifetime in seconds of the access token. If omitted, the authorization server SHOULD provide the expiration time via other means or document the default value.  
+  ~ refresh_toekn: OPTIONAL: The refresh token, which can be used to obtain new access tokens using the same authorization grant.  
+  ~ scope: OPTIONAL, if identical to the scope requested by the client; otherwise, REQUIRED.  
+~ The parameters are included in the entity-body of the HTTP response using the "application/json" media type.  
+~ The client MUST ignore unrecognized value names in the response. The sizes of tokens and other values received from the authorization server are left undefined. The client should avoid making assumptions about value sizes.  The authorization server SHOULD document the size of any value it issues.  
+
+## OAuth2 Accessing Protected Resources
+~ The client accesses protected resources by presenting the access token to the resource server.  The resource server MUST validate the access token and ensure that it has not expired and that its scope covers the requested resource.  
+~ The method in which the client utilizes the access token to authenticate with the resource server depends on the type of access token issued by the authorization server. Typically, it involves using the HTTP "Authorization" request header field [RFC2617] with an authentication scheme defined by the specification of the access token type used.  
+
+## OAuth2 Access Token Types
+~ The access token type provides the client with the information required to successfully utilize the access token to make a protected resource request (along with type-specific attributes).  
+~ The client MUST NOT use an access token if it does not understand the token type.  
+~ For example, the "bearer" token type defined in [RFC6750] is utilized by simply including the access token string in the request whereas the "mac" token type defined in [OAuth-HTTP-MAC] is utilized by issuing a Message Authentication Code (MAC) key together with the access token that is used to sign certain components of the HTTP   requests.  
+
+## OAuth2 Extensibility Options
+~ You can define new Access Token Types, New Endpoint Parameters, New Auth. Grant Types, New Auth. Endpoint Response Types and Additional Error Codes.  
+~ Not going into these details.  
+
+## OAuth2 Bearer Token
+~ A bearer token is a type of a token issued by the auth. server to he client to access protected resources.  
+~ Pure definition: A security token with the property that any party in possession of the token (a "bearer") can use the token in any way that any other party in possession of it can.  Using a bearer token does not require a bearer to prove possession of cryptographic key material (proof-of-possession).  
+
+## OAuth2 Transmitting Bearer Token
+~ There are 3 methods of sending bearer tokens in the resource request to the resource server.  
+~ Clients MUST NOT use more than one method to send token in each request.  
+~ 3 methods:  
+~ Authorization Request Header Field: the client uses the "Bearer" authentication scheme to transmit the access token in this method.  
+~ Form-Encoded Body Parameter: the client adds the access token to the request-body using the "access_token" parameter but there are many pre-conditions to use this method. Not going into its detail.  
+~ URI Query Parameter: the client adds the access token to the request URI query component as defined by "Uniform Resource Identifier (URI): Generic Syntax" [RFC3986],   using the "access_token" parameter.  
+
+## OAuth2 Bearer Token Recommendations
+~ Safeguard bearer tokens:  Client implementations MUST ensure that bearer tokens are not leaked to unintended parties, as they will be able to use them to gain access to protected resources. This is the primary security consideration when using bearer tokens and underlies all the more specific recommendations that follow.  
+~ Always use TLS (https):  Clients MUST always use TLS [RFC5246] (https) or equivalent transport security when making requests with bearer tokens.  Failing to do so exposes the token to numerous attacks that could give attackers unintended access.  
+~ Don't store bearer tokens in cookies:  Implementations MUST NOT store bearer tokens within cookies that can be sent in the clear (which is the default transmission mode for cookies). Implementations that do store bearer tokens in cookies MUST take precautions against cross-site request forgery.  
+~ Issue short-lived bearer tokens:  Token servers SHOULD issue short-lived (one hour or less) bearer tokens, particularly when issuing tokens to clients that run within a web browser or other environments where information leakage may occur. Using short-lived bearer tokens can reduce the impact of them being leaked.  
+~ Issue scoped bearer tokens:  Token servers SHOULD issue bearer tokens that contain an audience restriction, scoping their use to the intended relying party or set of relying parties.  
+~ Don't pass bearer tokens in page URLs:  Bearer tokens SHOULD NOT be passed in page URLs (for example, as query string parameters). Instead, bearer tokens SHOULD be passed in HTTP message headers or message bodies for which confidentiality measures are taken. Browsers, web servers, and other software may not adequately secure URLs in the browser history, web server logs, and other data structures.  If bearer tokens are passed in page URLs, attackers might be able to steal them from the history data, logs, or other unsecured locations.  
+
+
+## JSON Web Token (JWT)
+~ JSON Web Token (JWT) is a compact, URL-safe means of representing claims to be transferred between two parties.  
+~ a compact claims representation format intended for space constrained environments such as HTTP Authorization headers and URI query parameters.  
+~ JWT claims are encoded in a JSOn Web Signature (JWS) or a JSON Web Encryption (JWE) structure, enabling the claims to be digitally signed or MACed or encrypted.  
+~ JWTs represent a set of claims as a JSON object that is encoded in a JWS and/or JWE structure.  This JSON object is the JWT Claims Set.  
+~ As per Section 4 of RFC 7159 [RFC7159], the JSON object consists of zero or more name/value pairs (or members), where the names are strings and the values are arbitrary JSON values.  These members are the claims represented by the JWT.  
+~ The member names within the JWT Claims Set are referred to as Claim Names.  The corresponding values are referred to as Claim Values.  
+~ A JWT is represented as a sequence of URL-safe parts separated by period ('.') characters.  Each part contains a base64url-encoded value.  
+
+## JSON JWT Example
+~ The following example JOSE Header declares that the encoded object is a JWT, and the JWT is a JWS that is MACed using the HMAC SHA-256 algorithm:
+~ {"typ":"JWT",  
+      "alg":"HS256"}  
+~ This is always base64url encoded.  
+
+## JSOn JWT Claims
+~ The JWT Claims Set represents a JSON object whose members are the claims conveyed by the JWT.  
+~ The Claim Names within a JWT Claims Set MUST be unique.  
+~ There are three classes of JWT Claim Names: Registered Claim Names, Public Claim Names, and Private Claim Names. Not going into its details.  
+~ The following is an example of a JWT Claims Set:  
+~ {"iss":"joe",  
+      "exp":1300819380,  
+      "http://example.com/is_root":true}  
+
+## OAuth2 and JWT
+~ The OAuth 2.0 Authorization Framework [RFC6749] provides a method for making authenticated HTTP requests to a resource using an access token.  
+~ Access tokens are issued to third-party clients by an authorization server (AS) with the (sometimes implicit) approval of the resource owner.  
+~ In OAuth, an authorization grant is an abstract term used to describe intermediate credentials that represent the resource owner authorization.  An authorization grant is used by the client to obtain an access token.  
+~ Several authorization grant types are defined to support a wide range of client types and user experiences.  
+~ OAuth also allows for the definition of new extension grant types to support additional clients or to provide a bridge between OAuth and other trust frameworks.  
+~ Finally, OAuth allows the definition of additional authentication mechanisms to be used by clients when interacting with the authorization server.  
+~ JWT Bearer Token can be used to request an access token and JWT can also be used as a client authentication mechanism.  
+
+## Using JWTs as Authorization Grants (OAuth2)
+~ Here is how you can use a Bearer JWT as an authorization grant to request the client for an access token request.  
+~ Description of some of the parameters to be used in the access token request with a jwt bearer token auth. grant.  
+~ The value of the "grant_type" is "urn:ietf:params:oauth:grant-type:jwt-bearer".  
+~ The value of the "assertion" parameter MUST contain a single JWT.  
+~ The following example demonstrates an access token request with a JWT as an authorization grant (with extra line breaks for display purposes only):  
+     POST /token.oauth2 HTTP/1.1  
+     Host: as.example.com  
+     Content-Type: application/x-www-form-urlencoded  
+  
+     grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer  
+     &assertion=eyJhbGciOiJFUzI1NiIsImtpZCI6IjE2In0.  
+     eyJpc3Mi[...omitted for brevity...].  
+     J9l-ZhwP[...omitted for brevity...]  
+~ The following examples illustrate what a conforming JWT and an access token request would look like.  
+~ The example shows a JWT issued and signed by the system entity identified as "https://jwt-idp.example.com".  The subject of the JWT is identified by email address as "mike@example.com".  The intended audience of the JWT is "https://jwt-rp.example.net", which is an identifier with which the authorization server identifies itself.   The JWT is sent as part of an access token request to the authorization server's token endpoint at "https://authz.example.net/token.oauth2".  
+~ Below is the JSON object that could be encoded to produce the JWT Claims Set for a JWT:  
+{"iss":"https://jwt-idp.example.com",  
+      "sub":"mailto:mike@example.com",  
+      "aud":"https://jwt-rp.example.net",  
+      "nbf":1300815780,  
+      "exp":1300819380,  
+      "http://claims.example.com/member":true}  
+~ The following example JSON object, used as the header of a JWT, declares that the JWT is signed with the Elliptic Curve Digital Signature Algorithm (ECDSA) P-256 SHA-256 using a key identified by the "kid" value "16".  
+{"alg":"ES256","kid":"16"}  
+~ To present the JWT with the claims and header shown in the previous example as part of an access token request, for example, the client might make the following HTTPS request (with extra line breaks for display purposes only):  
+     POST /token.oauth2 HTTP/1.1  
+     Host: authz.example.net  
+     Content-Type: application/x-www-form-urlencoded  
+  
+     grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer  
+     &assertion=eyJhbGciOiJFUzI1NiIsImtpZCI6IjE2In0.  
+     eyJpc3Mi[...omitted for brevity...].  
+     J9l-ZhwP[...omitted for brevity...]  
+
+## Using JWTs for Client Authentication (OAuth2)
+~ Not going into its details.  
+
+## JWT Format (OAuth2)
+~ The JWT MUST contain an "iss" (issuer) claim that contains a unique identifier for the entity that issued the JWT.  
+~ The JWT MUST contain a "sub" (subject) claim identifying the principal that is the subject of the JWT.  
+  ~ For the authorization grant, the subject typically identifies an authorized accessor for which the access token is being requested  
+  ~ For client authentication, the subject MUST be the "client_id" of the OAuth client.  
+~ The JWT MUST contain an "aud" (audience) claim containing a value that identifies the authorization server as an intended audience. The token endpoint URL of the authorization server MAY be used as a value for an "aud" element to identify the authorization server as an intended audience of the JWT.  
+~ The JWT MUST contain an "exp" (expiration time) claim that limits the time window during which the JWT can be used. Note that the authorization server may reject JWTs
+with an "exp" claim value that is unreasonably far in the future.  
+~ There are other optional claims also, not going into those.  
+~ The JWT MUST be digitally signed or have a Message Authentication Code (MAC) applied by the issuer.  
+
+## Random Notes on OAuth2, JWT
+~ While a JWT is longer than most access tokens, they’re still relatively compact (though this depends on how much data you store within them).  
+~ With JWT You’re able to avoid database lookups because the JWT contains a base64 encoded version of the data you need to determine the identity and scope of access.  ~ This is much efficient than looking up an access token in the db to determine who it belongs to and whether it is valid.  
+~ Like OAuth access tokens, JWT tokens should be passed in the Authorization header.  
+~ The downside of not looking up access tokens with each call is that a JWT cannot be revoked. For that reason, you’ll want to use JWT in combination with refresh tokens and JWT expiration. With each API call, you would need to check the JWT signature and ensure that the expiration is still in the future.  
+~ Use JWT in concert with OAuth if you want to limit database lookups and you don’t require the ability to immediately revoke access.  
+~ A few years ago, before the JWT revolution, a <token> was just a string with no intrinsic meaning, e.g. 2pWS6RQmdZpE0TQ93X. That token was then looked-up in a database, which held the claims for that token. The downside of this approach is that DB access (or a cache) is required everytime the token is used.  
+~ JWTs encode and verify (via signing) their own claims. This allows folks to issue short-lived JWTs that are stateless (read: self-contained, don't depend on anybody else). They do not need to hit the DB. This reduces DB load and simplifies application architecture.  
+
+## Example Program: Spring Boot Security OAuth2
+~ This is from https://www.devglan.com/spring-security/spring-boot-security-oauth2-example  
+~ This is about securing REST APIs using Spring Boot Security OAuth2 with default token store.  
+~ We will be implementing AuthorizationServer, ResourceServer and some REST API for different crud operations and test these APIs using Postman.  
+~ we will be using mysql database to read user credentials instead of in-memory authentication. Also, to ease our ORM solution, we will be using spring-data and BCryptPasswordEncoder for password encoding.  
+~ at the end we will make this configuration compatible with spring boot 2.  
+~ the authorization server and resource server are implemented using spring boot.   
+~ this program starts with spring-boot-starter-parent of version 1.5.8  
+~ Project Code Structure:  
+  ~ config: AuthorizationServerConfig.java, ResourceServerConfig.java and SecurityConfig.java    
+  ~ controller: UserController.java    
+  ~ dao: UserDao.java    
+  ~ model: User.java  
+  ~ service: impl folder, UserService.java  
+  ~ impl: UserServiceImpl.java  
+  ~ Application.java
+  ~ resources folder has application.properties  
+~ AuthorizationServerConig Class: This is the auth. server config.   
+  ~ this class extends AuthorizationServerConfigurerAdapter which is from org.springframework.security.oauth2.... package 
+  ~ this class is responsible for generating tokens specific to a client.  
+  ~ this class overrides configure method (which takes ClientDetailsServiceConfigurer as param) of AuthorizationServerConfigurerAdapter class and configures CLIENT_ID, CLIENT_SECRET, GrantTypes, Scopes, Access and Refresh TokenValidity as an in-memory implementation.  
+  ~ And also overrides configure method (which takes AuthorizationServerEndpointsConfigurer as param) and sets the tokenStore and authenticationManager.  
+  ~ @EnableAuthorizationServer annot is used to enable auth. server.  
+~ ResourceServerConfig Class: This is the Resource Server Config.  
+  ~ Resource in our context is the REST API which we have exposed for the crud operation. To access these resources, client must be authenticated.  
+  ~ @EnableResourceServer annot. enables a resource server.  
+  ~ class extends ResourceServerConfigurerAdapter of org.springframework.security.oauth2... package  
+  ~ overrides configure method taking ResourceServerSecurityConfigurer as param and sets the resourceId and stateless attributes.  
+  ~ overrides configure method taking HttpSecurity as param and sets some values.  
+~ SecurityConfig Class: 
+  ~ extends WebSecurityConfigurerAdapter of org.springframework.security.config... package and provides usual spring security configuration.  
+  ~ we are using bcrypt encoder to encode our passwords.  
+  ~ @EnableWebSecurity : Enables spring security web security support.  
+  ~ @EnableGlobalMethodSecurity: Support to have method level access control such as @PreAuthorize @PostAuthorize  
+  ~ we are using inmemorytokenstore but you are free to use JdbcTokenStore or JwtTokenStore  
+  ~ globalUserDetails method - calls UserDetailsService constructor and then calls passwordEncoder method  
+  ~ overrides configure method that takes in HttpSecurity param and sets some values.  
+  ~ corsFilter method - sets some CorsConfiguration class values.  
+~ UserController class:
+  ~ UserService is DI.  
+  ~ listUser method which is invoked for request /user for requestType GET, calls findAll method of UserService.  
+  ~ create method which is invoked for request /user for type POST, calls save method of UserService.  
+  ~ delete method which is invoked for request /user/{id} for type DELETE, calls delete method of USerService.  
+~ UserServiceImpl Class:  
+  ~ Implements UserDetailsService of org.springframework.security.core.userdetails package.  
+  ~ also implements UserService which basically defines the abstract methods which will fetch, save and delete info from db.  
+  ~ UserDao is an inteface and is annotated with @Repository annot. and has one method i.e. findByUsername  
+  ~ UserDao is DI.  
+  ~ loadByUsername method calls findByUsername method of userDao and if not user is found, throws UsernameNotFoundException, this is a custom exception.  
+  ~ If user is found, returns the User object by calling the constructor of User with username, pwd and authority params.  
+  ~ getAuthority method returns a list of SimpleGrantedAuthority with a role ROLE_ADMIN.  
+  ~ delete and save methods of UserService interface are overridden but they call userDao's delete and save methods??  
+~ Testing the application  
+  ~ we will test the app with Postman  
+  ~ Run Application.java as a java application  
+  ~ To Generate OAuth Token: settings in postman   
+    ~ the url to hit is http://localhost:8080/oauth/token - is the url constant, how is this configured??  
+    ~ it should be a POST request (can we use GET also??)  
+    ~ Authorization Type: Basic Auth, Username: devglan-client, pwd: devglan-secret - what is the significance of these values and where are these configured??  
+    ~ in the body provide username: Alex123, password: password, grant_type: password. All this should be under x-www-form-urlencoded since as per OAuth2 specs, Access token request should use application/x-www-form-urlencoded  
+    ~ Once you make the request you will get following result.It has access token as well as refresh token.  
+  ~ Accessing Resource w/o token:  
+    ~ hit http://localhost:8080/users/user  
+    ~ you will get a json response with error and error_description  
+  ~ Accessing Resource w/ Token:  
+    ~ hit http://localhost:8080/users/user?access_token=<token>  
+    ~ and you will get the json response with id, username, salaray and age  
+  ~ Using refresh Token:  
+    ~ Usually, the token expiry time is very less in case of oAuth2 and you can use following API to refresh token once it is expired.  
+    ~ POSt request  
+    ~ http://localhost:8080/oauth/token  
+    ~ Body params under x-www-form-urlencoded - username: Alex123, password: password, grant_type: refresh_token, refresh_token: <token>  
+    ~ in response you will get a new access toke, refresh token, token type, expires in and scope.    
+~ Spring Boot 2 and OAuth2  
+  ~ If we run this application as is in spring boot 2 we will get an unauthorized error in postman  
+  ~ in pom.xml change the spring-boot-starter-parent version to 2.0.0 and also add a dependency org.springframework.security.oauth  
+  ~ and you need to Bcrypt CLIENT_SECRET also, so make this change in AuthorizationServerConfig.java  
+
+## Example Program: Spring Boot Security OAuth2 JWT Auth
+~ this is about about OAUTH2 implementation with spring boot security and JWT token and securing REST APIs
+~ we will be creating a sample spring security OAUTH2 application using a custom token store i.e. a JwtTokenStore
+~ Using JwtTokenStore as token provider allows us to customize the token generated with TokenEnhancer to add additional claims.
+~ A JWT token consists of 3 parts seperated with a dot(.) i.e. Header.payload.signature
+~ Header has 2 parts type of token and hashing algorithm used.The JSON structure comprising these two keys are Base64Encoded.
+  {
+  "alg": "HS256",
+  "typ": "JWT"
+  }
+~ Payload contains the claims.Primarily, there are three types of claims: reserved, public, and private claims. Reserved claims are predefined claims such as iss (issuer), exp (expiration time), sub (subject), aud (audience).In private claims, we can create some custom claims such as subject, role, and others.
+ {
+  "sub": "Alex123",
+  "scopes": [
+    {
+      "authority": "ROLE_ADMIN"
+    }
+  ],
+  "iss": "http://devglan.com",
+  "iat": 1508607322,
+  "exp": 1508625322
+ }
+~ Signature ensures that the token is not changed on the way.For example if you want to use the HMAC SHA256 algorithm, the signature will be created in the following way:
+ HMACSHA256(
+  base64UrlEncode(header) + "." +
+  base64UrlEncode(payload),
+  secret)
+~ Following is a sample JWT token:
+  eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJBbGV4MTIzIiwic2N.v9A80eU1VDo2Mm9UqN2FyEpyT79IUmhg
+~ Maven Dependencies:
+  ~ spring-boot-starter-security
+  ~ spring-security-oauth2
+  ~ spring-security-jwt  - this provides JwtTokenStore support
+~ Authorization Server Config
+  ~ AuthorizationServerConfig.java extends AuthorizationServerConfigurerAdapter of org.springframework.security.oauth2... package
+  ~ AuthenticationManager of org.springframework.security.authentication is DI.
+  ~ The method accessTokenConverter is configured as a bean and it instantiates JwtAccessTokenConverter of org.springframework.security.oauth2... package
+  ~ and it calls the setSigningKey of JwtAccessTokenConverter with some random string - what is this value??
+  ~ The tokenStore method is also configured as a bean and it returns a new instance of JwtTokenStore (which is of org.springframework.security.oauth2.. package), which takes accessTokenConverter method as input
+  ~ The configure method is overridden, taking an ClientDetailsServiceConfigurer of org.springframework.security.oauth2... package as input
+  ~ and it sets the inmemory details of CLIENT_ID, CLIENT_SECRET, GranTypes, Scopes, Access and refresh token validilty
+  ~ The configure method which takes AuthorizationServerEndpointsConfigurer of org.springframework.security.oauth2.. package as input is also overridden and tokenStore, authenticationManager and accessTokenConverter are set
+  ~ ClientDetailsServiceConfigurer can be used to define an in-memory or JDBC implementation of the client details service.In this example, we are using an in-memory implementation.
+  ~ @EnableAuthorizationServer - enables the auth. server.
+~ Resource Server Config 
+  ~ Resource in our context is the REST API which we have exposed for the crud operation.To access these resources, client must be authenticated 
+  ~ ResourceServerConfig.java extends ResourceServerConfigurerAdapter of org.springframework.security.oauth2.. package. 
+  ~ configure method which takes ResourceServerSecurityConfigurer of org.springframework.security.oauth2.. package as input is overridden and it calls resourceId and stateless methods in it. 
+  ~ the configure method which takes HttpSecurity of org.springframework.security.config.. package as input is also overridden and anonymous, disable, authorizeRequests, antMatchers, access, and, exceptionHandling, accessDeniedHandler methods. 
+  ~ in this we have configured that /users is a protected resource and it requires an ADMIN role for the access. 
+  ~ Since, we have resource-server and auhorization server implementation in the same project, we don't require to redefine our JwtAccessTokenConverter in the resource server config else we need to provide similar JwtAccessTokenConverter implementation in resource server too. 
+  ~ @EnableResourceServer enables resource server. 
+~ SecurityConfig.java: 
+  ~ extends WebSecurityConfigurerAdapter of org.springframework.security.config.. package 
+  ~ UserDetailsService of org.springframework.security.core.userdetails is DI. 
+  ~ what is the @Resource(name = "userService") on UserDetailsService DI?? 
+  ~ authenticationManagerBean method is overridden and is also configured as a bean?? 
+  ~ Method globalUserDetails takes AuthenticationManagerBuilder of org.springframework.security.config.. package as input and calls userDetailsService method and passwordEncoder method. 
+  ~ the configure method which takes an HttpSecurity of org.springframework.security.config.. package is also overridden and what does it basically do?? 
+  ~ the encoder method returns a new instance of BCryptPasswordEncoder of org.springframework.security.crypto.bcrypt and is configured as a bean 
+  ~ the corsFilter method creates an instance UrlBasedCorsConfigurationSource of org.springframework.web.cors and of that of CorsConfiguration which is from org.springframework.web.cors and sets few params of it and then returns an instance of FilterRegistrationBean of org.springframework.boot.web.servlet
+  ~ what is this all about??
+  ~ this method is also configured as a bean
+
 
 
 ## Notes
 ~ https://dzone.com/articles/secure-spring-rest-with-spring-security-and-oauth2  
 ~ https://auth0.com/docs/protocols/oauth2  
+~ https://www.devglan.com/spring-security/spring-boot-security-oauth2-example  
+~ https://www.devglan.com/spring-security/spring-boot-oauth2-jwt-example  
+~ http://blog.marcosbarbero.com/centralized-authorization-jwt-spring-boot2/  
+~ https://www.toptal.com/spring/spring-boot-oauth2-jwt-rest-protection  
   
