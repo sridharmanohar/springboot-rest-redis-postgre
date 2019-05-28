@@ -652,15 +652,15 @@ with an "exp" claim value that is unreasonably far in the future.
 
 ## Example Program: Spring Boot Security OAuth2 JWT Auth
 1. this is about about OAUTH2 implementation with spring boot security and JWT token and securing REST APIs  
-  1.1. we will be creating a sample spring security OAUTH2 application using a custom token store i.e. a JwtTokenStore
-~ Using JwtTokenStore as token provider allows us to customize the token generated with TokenEnhancer to add additional claims.
-~ A JWT token consists of 3 parts seperated with a dot(.) i.e. Header.payload.signature
-~ Header has 2 parts type of token and hashing algorithm used.The JSON structure comprising these two keys are Base64Encoded.
+2. we will be creating a sample spring security OAUTH2 application using a custom token store i.e. a JwtTokenStore
+3. Using JwtTokenStore as token provider allows us to customize the token generated with TokenEnhancer to add additional claims.
+4. A JWT token consists of 3 parts seperated with a dot(.) i.e. Header.payload.signature
+ 4.1 Header has 2 parts type of token and hashing algorithm used.The JSON structure comprising these two keys are Base64Encoded.
   {
   "alg": "HS256",
   "typ": "JWT"
   }
-~ Payload contains the claims.Primarily, there are three types of claims: reserved, public, and private claims. Reserved claims are predefined claims such as iss (issuer), exp (expiration time), sub (subject), aud (audience).In private claims, we can create some custom claims such as subject, role, and others.
+ 4.2 Payload contains the claims.Primarily, there are three types of claims: reserved, public, and private claims. Reserved claims are predefined claims such as iss (issuer), exp (expiration time), sub (subject), aud (audience).In private claims, we can create some custom claims such as subject, role, and others.
  {
   "sub": "Alex123",
   "scopes": [
