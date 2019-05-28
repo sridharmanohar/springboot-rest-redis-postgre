@@ -731,7 +731,31 @@ HMACSHA256(
         *   sets few params of it and  
         *   then returns an instance of FilterRegistrationBean of org.springframework.boot.web.servlet  
         * **what is the purpose of this?**  
-        * this method is also configured as a bean
+        * this method is also configured as a bean  
+13. User Script:  
+    * this script inserts into User table with id, username, salary and age details.  
+    * sample entry:  
+        * INSERT INTO User (id, username, password, salary, age) VALUES (1, 'Alex123', '$2a$04$I9Q2sDc4QGGg5WNTLmsz0.fvGv3OjoZyj81PrSFyGOqMphqfS2qKu', 3456, 33);  
+14. Testing Application:  
+    * First, run Application.java as a java program  
+    * switch to postman 
+        * and make POST request at http://localhost:8080/oauth/token to generate tokens  
+        * In the headers we have selected basic auth and provided username and password as devglan-client and devglan-secret  
+        * In the body under x-wwwform-urlencoded give the following key-value pairs:  
+            * username: Alex123  
+            * password: password  
+            * grant_type: password  
+        * This will result access_token, token_type, refresh_token, expiry etc.  
+        * Now, we can use the same token to access protected resources:  
+            * do a GET request  
+            * hit url: http://localhost:8080/users/user?access_token=<token>  
+            * and will get the response with id, username, salary and age  
+15. Converting the application to spring boot 2:  
+    * While running this application with above configurations in Spring Boot 2, you will get an Unauthorized error.  
+    * Following are the changes in pom.xml to make this example work with spring boot 2:  
+        * spring-boot-starter-parent artifact id version should be 2.0.0.RELEASE  
+        * and add spring-security-oauth2 artifact id  
+        * and you also need to Bcrypt CLIENT_SECRET in AuthorizationServerConfig.java  
 
 
 
