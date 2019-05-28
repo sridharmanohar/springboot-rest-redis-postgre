@@ -328,10 +328,58 @@ f. Check out the keys being used
   public Book findBook(ISBN isbn, boolean checkWarehouse, boolean includeUsed)  
 ~ Even though @SlowService is not a Spring annotation, the container automatically picks up its declaration at runtime and understands its meaning.  
 
+## OAuth2
+~ OAuth or OAuth2 stands for Open Authorization.  
+~ Its a free and Open protocol.  
+~ It allows users to share their private resources with a third-party while keeping their credentials secret. These resources could be photos, videos etc.  
+~ OAuth does this by granting the requesting (client) a token, once access is approved by the user. Each token grants limited access to a specific resource for a specific period.  
+~ The OAuth 1.0 was a result of a small community based effort, built to support certain use-cases. OAuth 2.0, is a standard and it is built with the experiences of OAuth 1.0 and other use-cases. 2 is backward compatible with 1.  
+  
+## Accessing restricted resources in traditional client-server model i.e. w/o oauth2
+~ The clients requests access to a protected resource on the server by authenticating with the server using the resource owner's creds. For this to happen, the resource owner must share it's creds with the third-party appi i.e. the client.  
+~ There are several limitations of this approach:  
+  ~ The third-party apps must store the user creds with them which can raise security, trust issues.  
+  ~ Whenever the user changes the creds for the protected resource, the same change should also happen at the third-party app - duplication of efforts.  
+  ~ Third-party apps will gain overly broad access to the protected resource and might lead to exploitation.  
+
+## OAuth2 Roles
+~ There are 4 roles in OAuth2.  
+~ Resource Owner : an entity capable of granting access to protected resources which it owns. When a resource owner is a person, it is referred to as end-user.  
+~ Resource Server: the server hosting the protected resources and capable of accepting and responding to protected resource requests using access tokens.  
+~ Client: an application making protected resurce requests on behalf of the resource owner and with its authorization.  
+~ Authorization Server: the server issuing access tokens to client after sucessfully authenticating the resource owner and obtaining authorization.  
+
+## OAuth2 Protocol Flow
+~ Following is the protocol flow:
+~ the client request authorization from resource owner. The authorization request can be made directly to the resource owner, or preferably indirectly via the authorization server.  
+~ the client receives the authorization grant, which is a credential represential resource owner's authorization, expressed using one of four grant types or using an extension grant type.  The grant type dependens upon the methd used by the client to request authorization and the types supported by the auth. server.  
+~ the client requests an access token by authenticating with the auth server and presenting the auth grant.  
+~ the auth server authenticates the client and validates the auth grant, if valid, issues an access token.  
+~ the client requests the protected resource from the resource server and authenticates by presenting the access token.  
+~ the resource server validates the access token, if valid, serves the request.  
+
+## OAuth2 Authorization grant types
+~ Auth. Code:  
+  ~ Here the auth. code is obtained by using an auth. server as an intermediary b/w the client and the resource owner.  
+  ~ Instead of requesting auth. directly from the resource owner, the client directs the resource owner to an auth. server which in turn directs the resource owner back to the client w/ the auth. code but before directing the resource owner back to the client with auth. code, the auth. server authenticates the resource owner and obatns auth.  
+~ Implicit: 
+  ~ this is a simplified auth. code flow optimized for clients implemented in a browser using a scripting language like javascript.  
+  ~ here instead of issuing the auth. code, the client is issued an access token directly.  
+~ Resource Owner password Creds:
+  ~ the resource owner pwd creds (i.e. username and pwd) can be used directly as an auth. grant to obtain an access token.  
+  ~ this should only be used when there is a high degree of trust b/w the resource owner and tthe client.  
+  ~ but even though the resource owner creds are with client, they are with teh client for a single reqest and are then exchanged for an access token.  
+  ~ this grant eliminates the need for the client to store the creds for future use, by exchanging creds with a long-lived access token. 
+~ Client creds:
+  ~ here the client creds are used as auth. grant typically when the client is acting on its own behalf i.e. the client is also the resource owner.  
+  ~ used for machine-to-machine interaction.  
+
+
+## OAuth2 Access Token
+~ 
+
+
 ## Notes
-~ https://www.concretepage.com/spring-boot/spring-boot-redis-cache  
-~ https://www.journaldev.com/18141/spring-boot-redis-cache  
-~ https://docs.spring.io/spring/docs/5.1.7.RELEASE/spring-framework-reference/integration.html#cache  
-~ https://spring.io/guides/gs/caching/   
-~ https://redis.io/documentation  
-         
+~ https://dzone.com/articles/secure-spring-rest-with-spring-security-and-oauth2  
+~ https://auth0.com/docs/protocols/oauth2  
+  
