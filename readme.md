@@ -651,8 +651,8 @@ with an "exp" claim value that is unreasonably far in the future.
   ~ and you need to Bcrypt CLIENT_SECRET also, so make this change in AuthorizationServerConfig.java  
 
 ## Example Program: Spring Boot Security OAuth2 JWT Auth
-~ this is about about OAUTH2 implementation with spring boot security and JWT token and securing REST APIs
-~ we will be creating a sample spring security OAUTH2 application using a custom token store i.e. a JwtTokenStore
+1. this is about about OAUTH2 implementation with spring boot security and JWT token and securing REST APIs  
+  1.1. we will be creating a sample spring security OAUTH2 application using a custom token store i.e. a JwtTokenStore
 ~ Using JwtTokenStore as token provider allows us to customize the token generated with TokenEnhancer to add additional claims.
 ~ A JWT token consists of 3 parts seperated with a dot(.) i.e. Header.payload.signature
 ~ Header has 2 parts type of token and hashing algorithm used.The JSON structure comprising these two keys are Base64Encoded.
