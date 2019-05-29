@@ -571,82 +571,110 @@ with an "exp" claim value that is unreasonably far in the future.
 ~ JWTs encode and verify (via signing) their own claims. This allows folks to issue short-lived JWTs that are stateless (read: self-contained, don't depend on anybody else). They do not need to hit the DB. This reduces DB load and simplifies application architecture.  
 
 ## Example Program: Spring Boot Security OAuth2
-~ This is from https://www.devglan.com/spring-security/spring-boot-security-oauth2-example  
-~ This is about securing REST APIs using Spring Boot Security OAuth2 with default token store.  
-~ We will be implementing AuthorizationServer, ResourceServer and some REST API for different crud operations and test these APIs using Postman.  
-~ we will be using mysql database to read user credentials instead of in-memory authentication. Also, to ease our ORM solution, we will be using spring-data and BCryptPasswordEncoder for password encoding.  
-~ at the end we will make this configuration compatible with spring boot 2.  
-~ the authorization server and resource server are implemented using spring boot.   
-~ this program starts with spring-boot-starter-parent of version 1.5.8  
-~ Project Code Structure:  
- ~ config: AuthorizationServerConfig.java, ResourceServerConfig.java and SecurityConfig.java    
- ~ controller: UserController.java    
- ~ dao: UserDao.java    
- ~ model: User.java  
- ~ service: impl folder, UserService.java  
- ~ impl: UserServiceImpl.java  
- ~ Application.java
- ~ resources folder has application.properties  
-~ AuthorizationServerConig Class: This is the auth. server config.   
- ~ this class extends AuthorizationServerConfigurerAdapter which is from org.springframework.security.oauth2.... package 
- ~ this class is responsible for generating tokens specific to a client.  
- ~ this class overrides configure method (which takes ClientDetailsServiceConfigurer as param) of AuthorizationServerConfigurerAdapter class and configures CLIENT_ID, CLIENT_SECRET, GrantTypes, Scopes, Access and Refresh TokenValidity as an in-memory implementation.  
- ~ And also overrides configure method (which takes AuthorizationServerEndpointsConfigurer as param) and sets the tokenStore and authenticationManager.  
- ~ @EnableAuthorizationServer annot is used to enable auth. server.  
-~ ResourceServerConfig Class: This is the Resource Server Config.  
- ~ Resource in our context is the REST API which we have exposed for the crud operation. To access these resources, client must be authenticated.  
- ~ @EnableResourceServer annot. enables a resource server.  
- ~ class extends ResourceServerConfigurerAdapter of org.springframework.security.oauth2... package  
- ~ overrides configure method taking ResourceServerSecurityConfigurer as param and sets the resourceId and stateless attributes.  
- ~ overrides configure method taking HttpSecurity as param and sets some values.  
-~ SecurityConfig Class: 
- ~ extends WebSecurityConfigurerAdapter of org.springframework.security.config... package and provides usual spring security configuration.  
- ~ we are using bcrypt encoder to encode our passwords.  
- ~ @EnableWebSecurity : Enables spring security web security support.  
- ~ @EnableGlobalMethodSecurity: Support to have method level access control such as @PreAuthorize @PostAuthorize  
- ~ we are using inmemorytokenstore but you are free to use JdbcTokenStore or JwtTokenStore  
- ~ globalUserDetails method - calls UserDetailsService constructor and then calls passwordEncoder method  
- ~ overrides configure method that takes in HttpSecurity param and sets some values.  
- ~ corsFilter method - sets some CorsConfiguration class values.  
-~ UserController class:
- ~ UserService is DI.  
- ~ listUser method which is invoked for request /user for requestType GET, calls findAll method of UserService.  
- ~ create method which is invoked for request /user for type POST, calls save method of UserService.  
- ~ delete method which is invoked for request /user/{id} for type DELETE, calls delete method of USerService.  
-~ UserServiceImpl Class:  
- ~ Implements UserDetailsService of org.springframework.security.core.userdetails package.  
- ~ also implements UserService which basically defines the abstract methods which will fetch, save and delete info from db.  
- ~ UserDao is an inteface and is annotated with @Repository annot. and has one method i.e. findByUsername  
- ~ UserDao is DI.  
- ~ loadByUsername method calls findByUsername method of userDao and if not user is found, throws UsernameNotFoundException, this is a custom exception.  
- ~ If user is found, returns the User object by calling the constructor of User with username, pwd and authority params.  
- ~ getAuthority method returns a list of SimpleGrantedAuthority with a role ROLE_ADMIN.  
- ~ delete and save methods of UserService interface are overridden but they call userDao's delete and save methods??  
-~ Testing the application  
- ~ we will test the app with Postman  
- ~ Run Application.java as a java application  
- ~ To Generate OAuth Token: settings in postman   
-   ~ the url to hit is http://localhost:8080/oauth/token - is the url constant, how is this configured??  
-   ~ it should be a POST request (can we use GET also??)  
-   ~ Authorization Type: Basic Auth, Username: devglan-client, pwd: devglan-secret - what is the significance of these values and where are these configured??  
-   ~ in the body provide username: Alex123, password: password, grant_type: password. All this should be under x-www-form-urlencoded since as per OAuth2 specs, Access token request should use application/x-www-form-urlencoded  
-   ~ Once you make the request you will get following result.It has access token as well as refresh token.  
- ~ Accessing Resource w/o token:  
-   ~ hit http://localhost:8080/users/user  
-   ~ you will get a json response with error and error_description  
- ~ Accessing Resource w/ Token:  
-   ~ hit http://localhost:8080/users/user?access_token=<token>  
-   ~ and you will get the json response with id, username, salaray and age  
- ~ Using refresh Token:  
-   ~ Usually, the token expiry time is very less in case of oAuth2 and you can use following API to refresh token once it is expired.  
-   ~ POSt request  
-   ~ http://localhost:8080/oauth/token  
-   ~ Body params under x-www-form-urlencoded - username: Alex123, password: password, grant_type: refresh_token, refresh_token: <token>  
-   ~ in response you will get a new access toke, refresh token, token type, expires in and scope.    
-~ Spring Boot 2 and OAuth2  
- ~ If we run this application as is in spring boot 2 we will get an unauthorized error in postman  
- ~ in pom.xml change the spring-boot-starter-parent version to 2.0.0 and also add a dependency org.springframework.security.oauth  
- ~ and you need to Bcrypt CLIENT_SECRET also, so make this change in AuthorizationServerConfig.java  
+1. This is from https://www.devglan.com/spring-security/spring-boot-security-oauth2-example  
+2. This is about securing REST APIs using Spring Boot Security OAuth2 with default token store.  
+3. We will be implementing AuthorizationServer, ResourceServer and some REST API for different crud operations and test these APIs using Postman.  
+4. we will be using mysql database to read user credentials instead of in-memory authentication. Also, to ease our ORM solution, we will be using spring-data and BCryptPasswordEncoder for password encoding.  
+5. at the end we will make this configuration compatible with spring boot 2.  
+6. the authorization server and resource server are implemented using spring boot.   
+7. this program starts with spring-boot-starter-parent of version 1.5.8  
+8. Project Code Structure:  
+    * config: AuthorizationServerConfig.java, ResourceServerConfig.java and SecurityConfig.java    
+    * controller: UserController.java    
+    * dao: UserDao.java    
+    * model: User.java  
+    * service: impl folder, UserService.java  
+    * impl: UserServiceImpl.java  
+    * Application.java
+    * resources folder has application.properties  
+9. AuthorizationServerConig Class: This is the auth. server config.   
+    * extends AuthorizationServerConfigurerAdapter which is from org.springframework.security.oauth2.... package 
+    * this class is responsible for generating tokens specific to a client.  
+    * the configure method 
+        * which takes ClientDetailsServiceConfigurer as param of AuthorizationServerConfigurerAdapter class is overridden and
+        * configures CLIENT_ID, CLIENT_SECRET, GrantTypes, Scopes, Access and Refresh TokenValidity as an in-memory implementation.  
+    * the configure method 
+        * which takes AuthorizationServerEndpointsConfigurer as param is also overridden and
+        * sets the tokenStore and authenticationManager.  
+    * @EnableAuthorizationServer annot is used to enable auth. server.  
+10. ResourceServerConfig Class: This is the Resource Server Config.  
+    * Resource in our context is the REST API which we have exposed for the crud operation. To access these resources, client must be authenticated.  
+    * @EnableResourceServer annot. enables a resource server.  
+    * class extends ResourceServerConfigurerAdapter of org.springframework.security.oauth2... package  
+    * the configure method
+        * taking ResourceServerSecurityConfigurer as param is overridden and
+        * sets the resourceId and stateless attributes.  
+    * the configure method 
+        * taking HttpSecurity as param is overridden and
+        * sets some values. **what values??**  
+11. SecurityConfig Class: 
+    * extends WebSecurityConfigurerAdapter of org.springframework.security.config... package and 
+    * provides usual spring security configuration.  
+    * we are using bcrypt encoder to encode our passwords.  
+    * @EnableWebSecurity : Enables spring security web security support.  
+    * @EnableGlobalMethodSecurity: Support to have method level access control such as @PreAuthorize @PostAuthorize  
+    * we are using inmemorytokenstore but you are free to use JdbcTokenStore or JwtTokenStore  
+    * globalUserDetails method 
+        * calls UserDetailsService constructor and 
+        * then calls passwordEncoder method  
+    * the configure method 
+        * that takes in HttpSecurity param is overridden and
+        * sets some values. **what values??**  
+    * corsFilter method 
+        * sets some CorsConfiguration class values. **what is this about? what does it set??**  
+12. UserController class:
+    * UserService is DI.  
+    * listUser method
+        *  which is invoked for request /user for requestType GET and 
+        *  calls findAll method of UserService.  
+    * create method 
+        * which is invoked for request /user for type POST and 
+        * calls save method of UserService.  
+    * delete method
+        * which is invoked for request /user/{id} for type DELETE and
+        * calls delete method of USerService.  
+13. UserServiceImpl Class:  
+    * Implements UserDetailsService of org.springframework.security.core.userdetails package. **what is the purpose of this class??**  
+    * also implements UserService which basically defines the abstract methods which will fetch, save and delete info from db.  
+    * UserDao is an inteface and is annotated with @Repository annot. and has one method i.e. findByUsername  
+        * **why can't have this in UserService itself and mark it with @Repository. What is the whole purpose of having this class??** 
+    * UserDao is DI.  
+    * loadByUsername method
+        * calls findByUsername method of userDao and  
+        * if not user is found, throws UsernameNotFoundException, this is a custom exception.  
+        * If user is found, returns the User object by calling the constructor of User with username, pwd and authority params.  
+    * getAuthority method
+        * returns a list of SimpleGrantedAuthority with a role ROLE_ADMIN. **what is this class about? Its purpose??**  
+    * delete and save methods 
+        * of UserService interface are overridden and
+        * they call userDao's delete and save methods. **why, why not the UserService methods themselves??**  
+14. Testing the application  
+    * we will test the app with Postman  
+    * Run Application.java as a java application  
+    * To Generate OAuth Token: settings in postman   
+        * the url to hit is http://localhost:8080/oauth/token - **is the url constant, how is this configured??**  
+        * it should be a POST request **(can we use GET also??)**  
+        * Authorization Type: Basic Auth, Username: devglan-client, pwd: devglan-secret 
+            * **what is the significance of these values and where are these configured??**  
+        * in the body provide username: Alex123, password: password, grant_type: password. 
+            * All this should be under x-www-form-urlencoded since as per OAuth2 specs, Access token request should use application/x-www-form-urlencoded  
+        * Once you make the request you will get following result. It has access token as well as refresh token.  
+    * Accessing Resource w/o token:  
+        * hit http://localhost:8080/users/user  
+        * you will get a json response with error and error_description  
+    * Accessing Resource w/ Token:  
+        * hit http://localhost:8080/users/user?access_token=<token>  
+        * and you will get the json response with id, username, salaray and age  
+    * Using refresh Token:  
+        * Usually, the token expiry time is very less in case of oAuth2 and you can use following API to refresh token once it is expired.  
+        * POSt request  
+        * http://localhost:8080/oauth/token  
+        * Body params under x-www-form-urlencoded - username: Alex123, password: password, grant_type: refresh_token, refresh_token: <token>  
+        * in response you will get a new access toke, refresh token, token type, expires in and scope.    
+15. Spring Boot 2 and OAuth2  
+    * If we run this application as is in spring boot 2 we will get an unauthorized error in postman  
+    * in pom.xml change the spring-boot-starter-parent version to 2.0.0 and also add a dependency org.springframework.security.oauth  
+    * and you also need to Bcrypt CLIENT_SECRET also, so make this change in AuthorizationServerConfig.java  
 
 ## Example Program: Spring Boot Security OAuth2 JWT Auth
 1. this is about about OAUTH2 implementation with spring boot security and JWT token and securing REST APIs
