@@ -578,7 +578,7 @@ with an "exp" claim value that is unreasonably far in the future.
 5. at the end we will make this configuration compatible with spring boot 2.  
 6. the authorization server and resource server are implemented using spring boot.   
 7. this program starts with spring-boot-starter-parent of version 1.5.8  
-8. Project Code Structure:  
+8. **Project Code Structure**:  
     * config: AuthorizationServerConfig.java, ResourceServerConfig.java and SecurityConfig.java    
     * controller: UserController.java    
     * dao: UserDao.java    
@@ -587,68 +587,157 @@ with an "exp" claim value that is unreasonably far in the future.
     * impl: UserServiceImpl.java  
     * Application.java
     * resources folder has application.properties  
-9. AuthorizationServerConig Class: This is the auth. server config.   
+9. **Maven Dependencies**:  
+    * spring-boot-starter-parent version 1.5.8.RELEASE, this artifact is the parent, following all artifacts are pure dependencies
+    * spring-boot-starter-web  
+    * spring-boot-starter-data-jpa  
+    * spring-boot-starter-security 
+    * spring-security-oauth2  
+    * mysql-connector-java  
+    * commons-dbcp  
+10. **AuthorizationServerConig** Class: This is the auth. server config.   
     * extends AuthorizationServerConfigurerAdapter which is from org.springframework.security.oauth2.... package 
     * this class is responsible for generating tokens specific to a client.  
+    * TokenStore of org.springframework.security.oauth2.. package is DI  
+    * AuthenticationManager of org.springframework.security.authentication package is also DI.  
     * the configure method 
-        * which takes ClientDetailsServiceConfigurer as param of AuthorizationServerConfigurerAdapter class is overridden and
+        * which takes ClientDetailsServiceConfigurer of org.springframework.security.oauth2.. package as input is overridden and  
         * configures CLIENT_ID, CLIENT_SECRET, GrantTypes, Scopes, Access and Refresh TokenValidity as an in-memory implementation.  
+        * all these are configured as in-memory  
+        * all these fields are configured in the class as static final fields.  
+        * **what is the type of auth. grant that is being given here??**
     * the configure method 
-        * which takes AuthorizationServerEndpointsConfigurer as param is also overridden and
-        * sets the tokenStore and authenticationManager.  
-    * @EnableAuthorizationServer annot is used to enable auth. server.  
-10. ResourceServerConfig Class: This is the Resource Server Config.  
+        * which takes AuthorizationServerEndpointsConfigurer of org.springframework.security.oauth2.. package as param is also overridden and
+        * sets the tokenStore and authenticationManager with DI'd TokenStore and AuthenticationManager instances.  
+        * **what is the purpose of this? what is this doing exactly?**  
+    * this is an in-memory but we can perform jdbc based implementation too.  
+    * Annotations used:  
+        * class level: @Configuration, @EnableAuthorizationServer  
+        * method level: @Autowired, @Override  
+11. **ResourceServerConfig** Class: This is the Resource Server Config.  
     * Resource in our context is the REST API which we have exposed for the crud operation. To access these resources, client must be authenticated.  
-    * @EnableResourceServer annot. enables a resource server.  
     * class extends ResourceServerConfigurerAdapter of org.springframework.security.oauth2... package  
     * the configure method
-        * taking ResourceServerSecurityConfigurer as param is overridden and
-        * sets the resourceId and stateless attributes.  
+        * taking ResourceServerSecurityConfigurer of org.springframework.security.oauth2.. package as param is overridden and
+        * sets the resourceId to some static constant and (**what is the purpose of this??**)  
+        * sets the stateless attribute to false.  (**why is it set to false, what is the significance??**)   
     * the configure method 
-        * taking HttpSecurity as param is overridden and
-        * sets some values. **what values??**  
-11. SecurityConfig Class: 
+        * taking HttpSecurity of org.springframework.security.config.. package as param is overridden and
+        * disables anonymous and  
+        * calls authorizeRequests and sets antmatchers to /users/** and gives access to role ADMIN and  
+        * calls accessDeniedHandler to handling exceptions, basically throws a new OAuth2AccessDeniedHandler of org.springframework.security.oauth2.. package.  
+        * **what are all these settings? what is its significance??**  
+    * Annotations Used:
+        * class level: @Configuration, @EnableResourceServer  
+        * method level: @Override  
+12. **SecurityConfig** Class: 
     * extends WebSecurityConfigurerAdapter of org.springframework.security.config... package and 
     * provides usual spring security configuration.  
     * we are using bcrypt encoder to encode our passwords.  
-    * @EnableWebSecurity : Enables spring security web security support.  
-    * @EnableGlobalMethodSecurity: Support to have method level access control such as @PreAuthorize @PostAuthorize  
-    * we are using inmemorytokenstore but you are free to use JdbcTokenStore or JwtTokenStore  
+    * we are using in-memorytokenstore but you are free to use JdbcTokenStore or JwtTokenStore  
+    * UserDetailsService of org.springframework.security.core.. package is DI with @Resource. **what is the purpose of this??**  
+    * the authenticationManagerBean method  
+        * is overridden and  
+        * it just makes a super call and returns AuthenticationManager of org.springframework.security.authentication package and  
+        * is annotated as @bean  
+        * **just what is the significance of this? is it overridden for the sake of it??**  
     * globalUserDetails method 
-        * calls UserDetailsService constructor and 
-        * then calls passwordEncoder method  
+        * takes AuthenticationManagerBuilder of org.springframework.security.config.. package as input param and  
+        * calls userDetailsService and passes the DI'd UserDetailsService instance  
+        * then calls passwordEncoder method and passes the encoder method  
+        * this method is also DI'd  
+        * **what is the purpose of this method, couldnt understand and why is it DI'd??**    
     * the configure method 
-        * that takes in HttpSecurity param is overridden and
-        * sets some values. **what values??**  
+        * that takes in HttpSecurity of org.springframework.security.config.. package as param is overridden and  
+        * disables csrf and (**what is csrf? why to disable??**)  
+        * disables anonymous and (**what is meant by anonymous? why to disable??**)   
+        * calls authorizeRequests and sets antMatchers to /api-docs/* and calls permitAll on it. **what is this stmt doing exactly??**  
+    * the tokenStore method  
+        * returns a new InMemoryTokenStore of org.springframework.security.oauth2.. package instance and  
+        * is annotated as @bean  
+        * **what is the significance of this method??**  
+        * **and why is this even here, in jwt project, there is no word about any token store in securityconfig class, then whey here??**
+    * the encoder method  
+        * returns a new BCryptPasswordEncoder of org.springframework.security.crypto.bcrypt package instance and  
+        * is annotated as a @bean  
+        * **what is the significance?**  
     * corsFilter method 
-        * sets some CorsConfiguration class values. **what is this about? what does it set??**  
-12. UserController class:
-    * UserService is DI.  
-    * listUser method
-        *  which is invoked for request /user for requestType GET and 
-        *  calls findAll method of UserService.  
-    * create method 
-        * which is invoked for request /user for type POST and 
-        * calls save method of UserService.  
-    * delete method
-        * which is invoked for request /user/{id} for type DELETE and
-        * calls delete method of USerService.  
-13. UserServiceImpl Class:  
+        * instantiates UrlBasedCorsConfigurationSource of org.springframework.web.cors package and **what is this for?**  
+        * instantiates CorsConfiguration of org.springframework.web.cors package and **what is this for??**  
+        * sets AllowCredentials to true and  **purpose??**
+        * sets some AllowedOrigin, AllowedHeader and AllowedMethod to * and **purpose??**  
+        * calls registerCorsConfiguration of UrlBasedCorsConfigurationSource and sets /** to CorsConfiguration instance and  
+        * creates an instance of FilterRegistrationBean of org.springframework.boot.web.servlet package by passing in a new instance of CorsFilter of org.springframework.web.filter package and calls some setOrder method which is set to 0 and returns this instance.  
+        * **what is cors?? what is all these settings?? is it common for all implementations??**  
+     * Annotations used:  
+        * class level: @Configuration, @EnableWebSecurity, @EnableGlobalMethodSecurity(prePostEnabled = true) - **what do they do??**  
+        * method level: @Override, @Bean, @Autowired - **what is the diff. b/w bean and autowired?? why is a method annot. with autowired? what is DI'd here?**  
+        * instance level: @Resource **why?whats the use??**  
+13. **UserService** interface:  
+    * has 3 methods  
+    * save, findAll and delete.  
+    * this interface is very specific to the business needs.  
+14. **UserDao** interface:  
+    * extends CrudRepository of org.springframework.data.repository package with User and Long as params  
+    * the method findByUsername  
+        * takes string username as input  
+        * returns User instance  
+    * Annotations used:  
+        * class level: @Repository  
+    * **why is this even created? why cant the UserService itself be made to extend CruDRepo??**   
+15. **UserServiceImpl** Class:  
     * Implements UserDetailsService of org.springframework.security.core.userdetails package. **what is the purpose of this class??**  
-    * also implements UserService which basically defines the abstract methods which will fetch, save and delete info from db.  
-    * UserDao is an inteface and is annotated with @Repository annot. and has one method i.e. findByUsername  
-        * **why can't have this in UserService itself and mark it with @Repository. What is the whole purpose of having this class??** 
-    * UserDao is DI.  
-    * loadByUsername method
+    * also implements UserService which basically defines the abstract methods - fetch, save and delete.  
+    * UserDao is DI'd.  
+    * loadByUsername method  
+        * takes string userId as input   
         * calls findByUsername method of userDao and  
-        * if not user is found, throws UsernameNotFoundException, this is a custom exception.  
+        * if no user is found, throws UsernameNotFoundException of org.springframework.security.core.userdetails package is thrown. **what is this package about??**  
         * If user is found, returns the User object by calling the constructor of User with username, pwd and authority params.  
     * getAuthority method
-        * returns a list of SimpleGrantedAuthority with a role ROLE_ADMIN. **what is this class about? Its purpose??**  
+        * returns a list of SimpleGrantedAuthority of org.springframework.security.core.authority package with a role ROLE_ADMIN. **what is this class about? Its purpose??**  
+    * findAll method  
+        * creates an instance of ArrayList of type User.  
+        * calls findAll of UserDao and iterates through all returned User instances and adds each instance to the List created above and  
+        * returns the list  
     * delete and save methods 
         * of UserService interface are overridden and
         * they call userDao's delete and save methods. **why, why not the UserService methods themselves??**  
-14. Testing the application  
+    * Annotations used:  
+        * class level: @Service(value = "userService") **what is the purpose of value here??**
+        * method level: @Override  
+        * instance level: @Autowired  
+16. **UserController** class:  
+    * UserService is DI.  
+    * listUser method  
+        *  which is invoked for request /user for requestType GET and 
+        *  calls findAll method of UserService and  
+        *  returns a list of all User objects  
+    * create method  
+        * takes User instance as param and  
+        * is invoked for request /user for type POST and 
+        * calls save method of UserService.  
+    * delete method  
+        * takes id as input param  
+        * which is invoked for request /user/{id} for type DELETE and
+        * calls delete method of USerService.  
+        * returns sucess, irrespective of what happens.  
+    * Annotations used:  
+        * class level: @RestController, @RequestMapping  
+        * method level: @RequestMapping  
+        * instance level: @Autowired  
+17. **User** class:  
+    * this is in the model  
+    * has id, username, password, salary and age fields and their accessors  
+    * password is annotated with @JsonIgnore  
+    * Annotations used:  
+        *  class level: @Entity  
+        *  instance level: @Id, @GeneratedValue(strategy=GenerationType.AUTO), @Column, @JsonIgnore  
+18. **Scripts**:
+    * Insert scripts are used to make some entries into the User table  
+    * Following is an example:  
+        * INSERT INTO User (id, username, password, salary, age) VALUES (1, 'Alex123', '$2a$04$I9Q2sDc4QGGg5WNTLmsz0.fvGv3OjoZyj81PrSFyGOqMphqfS2qKu', 3456, 33);  
+19. **Testing the application**:  
     * we will test the app with Postman  
     * Run Application.java as a java application  
     * To Generate OAuth Token: settings in postman   
@@ -664,6 +753,7 @@ with an "exp" claim value that is unreasonably far in the future.
         * you will get a json response with error and error_description  
     * Accessing Resource w/ Token:  
         * hit http://localhost:8080/users/user?access_token=<token>  
+            * **should the token be part of the uri??** 
         * and you will get the json response with id, username, salaray and age  
     * Using refresh Token:  
         * Usually, the token expiry time is very less in case of oAuth2 and you can use following API to refresh token once it is expired.  
@@ -671,22 +761,23 @@ with an "exp" claim value that is unreasonably far in the future.
         * http://localhost:8080/oauth/token  
         * Body params under x-www-form-urlencoded - username: Alex123, password: password, grant_type: refresh_token, refresh_token: <token>  
         * in response you will get a new access toke, refresh token, token type, expires in and scope.    
-15. Spring Boot 2 and OAuth2  
+20. **Spring Boot 2 and OAuth2**  
     * If we run this application as is in spring boot 2 we will get an unauthorized error in postman  
     * in pom.xml change the spring-boot-starter-parent version to 2.0.0 and also add a dependency org.springframework.security.oauth  
     * and you also need to Bcrypt CLIENT_SECRET also, so make this change in AuthorizationServerConfig.java  
 
 ## Example Program: Spring Boot Security OAuth2 JWT Auth
+1. this is from https://www.devglan.com/spring-security/spring-boot-oauth2-jwt-example article
 1. this is about about OAUTH2 implementation with spring boot security and JWT token and securing REST APIs
 2. we will be creating a sample spring security OAUTH2 application using a custom token store i.e. a JwtTokenStore
 3. Using JwtTokenStore as token provider allows us to customize the token generated with TokenEnhancer to add additional claims.
-4. A JWT token consists of 3 parts seperated with a dot(.) i.e. Header.payload.signature
-5. Header has 2 parts type of token and hashing algorithm used. The JSON structure comprising these two keys are Base64Encoded.  
+4. A **JWT token consists of 3 parts** seperated with a dot(.) i.e. Header.payload.signature
+5. **Header has 2 parts** - type of token and hashing algorithm used. The JSON structure comprising these two keys are Base64Encoded.  
  {  
  "alg": "HS256",  
  "typ": "JWT"  
  }  
-6. Payload contains the claims. Primarily, there are three types of claims: reserved, public, and private claims. Reserved claims are predefined claims such as iss (issuer), exp (expiration time), sub (subject), aud (audience).In private claims, we can create some custom claims such as subject, role, and others.  
+6. **Payload** contains the claims. Primarily, there are three types of claims: reserved, public, and private claims. Reserved claims are predefined claims such as iss (issuer), exp (expiration time), sub (subject), aud (audience).In private claims, we can create some custom claims such as subject, role, and others.  
 {  
  "sub": "Alex123",  
  "scopes": [  
@@ -698,73 +789,154 @@ with an "exp" claim value that is unreasonably far in the future.
  "iat": 1508607322,  
  "exp": 1508625322  
 }  
-7. Signature ensures that the token is not changed on the way.For example if you want to use the HMAC SHA256 algorithm, the signature will be created in the following way:
+7. **Signature** ensures that the token is not changed on the way. For example if you want to use the HMAC SHA256 algorithm, the signature will be created in the following way:
 HMACSHA256(
  base64UrlEncode(header) + "." +
  base64UrlEncode(payload),
  secret)
-8. Following is a sample JWT token:
+8. Following is a **sample JWT token**:
  eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJBbGV4MTIzIiwic2N.v9A80eU1VDo2Mm9UqN2FyEpyT79IUmhg  
+9. **Project Structure**:  
+    * config: AuthorizationServerConfig.java, ResourceServerConfig.java, SecurityConfig.java  
+    * controller: UserController.java  
+    * dao: UserDao.java  
+    * model: User.java  
+    * service: impl package, UserService.java  
+    * impl: UserServiceImpl.java  
+    * Application.java  
+    * resources folder has application.properties   
 9. **Maven Dependencies**:  
+    * spring-boot-starter-parent version 1.5.8.RELEASE is a parent artifact. Following all are dependency artifacts  
+    * spring-boot-starter-web  
+    * spring-boot-starter-data-jpa  
     * spring-boot-starter-security  
     * spring-security-oauth2  
     * spring-security-jwt  - this provides JwtTokenStore support  
-10. Authorization Server Config  
+    * mysql-connector-java  
+    * commons-dbcp  
+10. **Authorization Server Config**  
     * AuthorizationServerConfig.java extends AuthorizationServerConfigurerAdapter of org.springframework.security.oauth2... package  
-    * AuthenticationManager of org.springframework.security.authentication is DI.  
+    * AuthenticationManager of org.springframework.security.authentication is DI'd.  
     * Method accessTokenConverter  
-        * is configured as a bean and it instantiates JwtAccessTokenConverter of org.springframework.security.oauth2... package  
-        * and it calls the setSigningKey of JwtAccessTokenConverter with some random string - **what is this value??**  
+        * creates an instance of JwtAccessTokenConverter of org.springframework.security.oauth2.. package  
+        * and it calls the setSigningKey of JwtAccessTokenConverter with some random string - **what is this value and what is happening here??**  
+        * is configured as a @bean  
+        * and returns the instance of JwtAccessTokenConverter with the signingkey.  
+        * We have added our custom signature to make the JWT token more robust  
     * The tokenStore method  
-        * is also configured as a bean and it returns a new instance of JwtTokenStore (which is of org.springframework.security.oauth2.. package), which takes accessTokenConverter method as input  
+        * is also configured as a @bean and  
+        * it returns a new instance of JwtTokenStore (which is of org.springframework.security.oauth2.. package), which takes accessTokenConverter method as input  
+        * Apart from JwtTokenStore, spring security also provides InMemoryTokenStore and JdbcTokenStore.  
     * The configure method  
         * is overridden, taking an ClientDetailsServiceConfigurer of org.springframework.security.oauth2... package as input  
         * and it sets the inmemory details of CLIENT_ID, CLIENT_SECRET, GranTypes, Scopes, Access and refresh token validilty  
+        * all these fields are set in the class as static final fields  
+        * **what is the type of auth. grant that is being given here??**
     * The configure method  
-        * which takes AuthorizationServerEndpointsConfigurer of org.springframework.security.oauth2.. package as input is also overridden and tokenStore, authenticationManager and accessTokenConverter are set  
-    * ClientDetailsServiceConfigurer can be used to define an in-memory or JDBC implementation of the client details service.In this example, we are using an in-memory implementation.  
-    * @EnableAuthorizationServer - enables the auth. server.  
-11. Resource Server Config  
-    * Resource in our context is the REST API which we have exposed for the crud operation.To access these resources, client must be authenticated  
+        * which takes AuthorizationServerEndpointsConfigurer of org.springframework.security.oauth2.. package as input is also overridden and 
+        * tokenStore, authenticationManager and accessTokenConverter are set  
+        * **what is happening here??**
+    * ClientDetailsServiceConfigurer can be used to define an in-memory or JDBC implementation of the client details service. In this example, we are using an in-memory implementation.  
+    * Annotations used:  
+        * class level: @Configuration, @EnableAuthorizationServer
+        * instance level: @Autowired
+        * method level: @Bean, @Override
+11. **Resource Server Config**:  
+    * Resource in our context is the REST API which we have exposed for the crud operation. To access these resources, client must be authenticated  
     * ResourceServerConfig.java extends ResourceServerConfigurerAdapter of org.springframework.security.oauth2.. package.  
     * configure method  
         * which takes ResourceServerSecurityConfigurer of org.springframework.security.oauth2.. package as input is overridden 
-        * and it calls resourceId and stateless methods in it.  
+        * and it calls resourceId and sets some constant in it - **what is this value??**  
+        * and sets stateless to false - **what is the significance?? **  
     * configure method  
         * which takes HttpSecurity of org.springframework.security.config.. package as input is also overridden  
-        * and anonymous, disable, authorizeRequests, antMatchers, access, and, exceptionHandling, accessDeniedHandler methods.  
-        * in this we have configured that /users is a protected resource and it requires an ADMIN role for the access.  
+        * and disables annonymous - **what does this mean??**  
+        * and we have configured that /users is a protected resource and it requires an ADMIN role for the access.  
+        * and in case of an exception, a new instance of OAuth2AccessDeniedHandler of org.springframework.security.oauth2.. package is thrown - **why specifically this??**    
     * Since, we have resource-server and auhorization server implementation in the same project, we don't require to redefine our JwtAccessTokenConverter in the resource server config else we need to provide similar JwtAccessTokenConverter implementation in resource server too.  
-    * @EnableResourceServer enables resource server.  
-12. SecurityConfig.java:  
+    * Annotations used:  
+        * class level: @Configuration, @EnableResourceServer  
+        * method level: @Override    
+12. **SecurityConfig.java**:  
     * extends WebSecurityConfigurerAdapter of org.springframework.security.config.. package  
     * UserDetailsService  
-        * of org.springframework.security.core.userdetails is DI.  
+        * of org.springframework.security.core.userdetails is DI'd.  
         * **what is the @Resource(name = "userService") on UserDetailsService DI??**  
+        * **what is the significance of this class??**  
     * authenticationManagerBean method  
         *  is overridden and  
         *  **is also configured as a bean, but why, what is its purpose??**  
+        *  and retuns the AuthenticationManagerBean instance by callings its super - **is this just a mandataory config??**  
     * Method globalUserDetails  
         *  takes AuthenticationManagerBuilder of org.springframework.security.config.. package as input and  
-        *  calls userDetailsService method and passwordEncoder method.  
+        *  calls userDetailsService method and passes in the DI'd UserDetailsService instance  
+        *  and calls passwordEncoder method and passes in the encode method    
     * the configure method  
         *  which takes an HttpSecurity of org.springframework.security.config.. package is also overridden and 
-        *  **what does it basically do??** 
+        *  disables csrf - **what is csrf??why disable it??**   
+        *  and disables anonymous - **what is anonymous, why disable??**  
+        *  and call authorizeRequests for /api-docs/ and permiting all to access it  
+            * if i understand the above thing correctly, it on one hand it is configuring /api-docs as a protected resource and on the other hand it is permiting all to access it - **then why in first place make the resource protected??**  
     * the encoder method
         * returns a new instance of BCryptPasswordEncoder of org.springframework.security.crypto.bcrypt and 
         * is configured as a bean  
     * the corsFilter method
         *  creates an instance UrlBasedCorsConfigurationSource of org.springframework.web.cors and  
-        *   of that of CorsConfiguration which is from org.springframework.web.cors and  
-        *   sets few params of it and  
-        *   then returns an instance of FilterRegistrationBean of org.springframework.boot.web.servlet  
+        *  of that of CorsConfiguration which is from org.springframework.web.cors and  
+        *  sets few params of it and  
+        *  then returns an instance of FilterRegistrationBean of org.springframework.boot.web.servlet  
         * **what is the purpose of this?**  
         * this method is also configured as a bean  
-13. User Script:  
+     * Annotations used:  
+        * class level: @Configuration, @EnableWebSecurity, @EnableGlobalMethodSecurity(prePostEnabled = true) - **what do they do??**  
+        * method level: @Override, @Bean, @Autowired - **i kind of still dont understand the diff b/w autowired and bean??**
+        * instance level: @Resource(name = "userService") **what does this even mean??**  
+13. **UserService** interface:  
+    * has 3 methods  
+    * save, findAll and delete  
+    * all methods specific for business purpose  
+13. **UserDao** interface:  
+    * extends CrudRepository of org.springframework.data.repository  
+    * and passes in User and Long  
+    * has 1 method - findByUsername : returns User instance  
+    * **dont understand the duplication of having both a dao and service interfaces, when they both could have been combined?**  
+    * Annotations used:  
+        * class level: @Repository  
+13. **UserServiceImpl** class:  
+    * implements UserDetailsService of org.springframework.security.core.userdetails package and UserService interfaces  
+    * **what is the purpose and significance of this UserDetailsService class??**  
+    * UserDao is DI'd  
+    * the method loadUserByUsername:  
+        * takes a string userId as input  
+        * calls findByUsername of UserDao  
+        * and if user is found then User instance is returned with username, pwd and authority  
+        * if not, then a UsernameNotFoundException from org.springframework.security.core.userdetails package is thrown  
+        * method returns UserDetails of org.springframework.security.core.userdetails - **what is this and its significance??**  
+    * the method getAuthority:  
+        * returns a List of SimpleGrantedAuthority with roleas ROLE_ADMIN  
+        * SimpleGrantedAuthority is from org.springframework.security.core.authority - **significance??**  
+        * **why role has to be mentioned??**  
+    * the method findAll:  
+        *  creates an instance of an ArrayList of type User  
+        *  calls findAll of UserDao and fetches the User objects and iterates through each of them and dumps each User instance into the above created List  
+        *  and returns this list  
+    * the delete method:  
+        * takes a long value - id  
+        * and calls delete of UserDao - **why this? it should be calling UserService??**  
+        * and this is a overridden method  
+    * the save method:  
+        * takes a User instance  
+        * and calls save of UserDao - **again why userDao, why not userservice??**  
+        * and returns User instance - **why is save method returning a User instance??**  
+    * Annotations used:  
+        * class level: @Service(value = "userService") - **what is the significance of value??**  
+        * method level: @Override  
+        * instance level: @Autowired  
+13. **User Script**:  
     * this script inserts into User table with id, username, salary and age details.  
     * sample entry:  
         * INSERT INTO User (id, username, password, salary, age) VALUES (1, 'Alex123', '$2a$04$I9Q2sDc4QGGg5WNTLmsz0.fvGv3OjoZyj81PrSFyGOqMphqfS2qKu', 3456, 33);  
-14. Testing Application:  
+14. **Testing Application**:  
     * First, run Application.java as a java program  
     * switch to postman 
         * and make POST request at http://localhost:8080/oauth/token to generate tokens  
@@ -777,21 +949,45 @@ HMACSHA256(
         * Now, we can use the same token to access protected resources:  
             * do a GET request  
             * hit url: http://localhost:8080/users/user?access_token=<token>  
+                * **should the access token be part of uri, is it safe way??**
             * and will get the response with id, username, salary and age  
-15. Converting the application to spring boot 2:  
+15. **Converting the application to spring boot 2**:  
     * While running this application with above configurations in Spring Boot 2, you will get an Unauthorized error.  
     * Following are the changes in pom.xml to make this example work with spring boot 2:  
         * spring-boot-starter-parent artifact id version should be 2.0.0.RELEASE  
         * and add spring-security-oauth2 artifact id  
         * and you also need to Bcrypt CLIENT_SECRET in AuthorizationServerConfig.java  
 
+## What to read in what  
+1. Spring Security references
+    * What’s New in Spring Security 5.1 - Servlet  
+    * Spring Security Maven Config with and w/o spring boot  
+    * Project Modules - core, web, oauth  
+    * HttpSecurity  
+    * Java Configuration and Form Login  
+    * Authorize Requests  
+    * Handling Logouts  
+    * Authentication - In-Memory Authentication, JDBC Authentication  
+    * AuthenticationProvider  
+    * UserDetailsService  
+    * Method Security - EnableGlobalMethodSecurity, GlobalMethodSecurityConfiguration  
+    * Architecture and Implementation  
+    * Web Application Security  
+    * Cross Site Request Forgery (CSRF)  
+    * CORS  
+    * Authorization Architecture  
+    * Access Control using @PreAuthorize and @PostAuthorize  
+    * Spring Security Crypto Module  
+    * Spring MVC Integration  
+    * Spring Data & Spring Security Configuration  
+    * Security Database Schema  
+    * Spring Security Dependencies  
+    * Spring Security FAQ  
+2. OAuth2 Boot
+    * Spring Security OAuth2 Dev Guide  
+    * Full doc except for SSO  
 
 
 ## Notes
-~ https://dzone.com/articles/secure-spring-rest-with-spring-security-and-oauth2  
-~ https://auth0.com/docs/protocols/oauth2  
-~ https://www.devglan.com/spring-security/spring-boot-security-oauth2-example  
-~ https://www.devglan.com/spring-security/spring-boot-oauth2-jwt-example  
-~ http://blog.marcosbarbero.com/centralized-authorization-jwt-spring-boot2/  
 ~ https://www.toptal.com/spring/spring-boot-oauth2-jwt-rest-protection  
  
