@@ -16,7 +16,7 @@
 );
 
 ## View all tables in postgresql db
-. select * from pg_catalog.pg_tables;
+. select * from pg_tables;
 
 ## Insert
 . insert into test (id) values (1);
